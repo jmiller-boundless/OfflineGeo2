@@ -1,13 +1,17 @@
 package boundlessgeo.com.offlinegeo2;
 
+import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.database.SQLException;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
 import android.view.View;
 import android.widget.Button;
 
 import com.boundlessgeo.model.GeoPackageHelper;
+import com.boundlessgeo.view.PickLayersAlert;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
@@ -24,7 +28,7 @@ public class MapsActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
-        final Dialog dialog = new Dialog(this);
+        /*final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog);
         dialog.setTitle("Dialog box");
 
@@ -36,7 +40,10 @@ public class MapsActivity extends FragmentActivity {
             }
         });
 
-        dialog.show();
+        dialog.show();*/
+        FragmentManager fm = getSupportFragmentManager();
+        PickLayersAlert pickLayersAlert = new PickLayersAlert();
+        pickLayersAlert.show(fm,"picklayersalert");
     }
 
     @Override
