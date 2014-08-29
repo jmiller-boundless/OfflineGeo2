@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.database.SQLException;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
@@ -19,7 +20,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 
-public class MapsActivity extends FragmentActivity {
+public class MapsActivity extends FragmentActivity implements PickLayersAlert.NoticeDialogListener {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
@@ -109,5 +110,23 @@ public class MapsActivity extends FragmentActivity {
 
         }
         mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+    }
+
+
+    // The dialog fragment receives a reference to this Activity through the
+    // Fragment.onAttach() callback, which it uses to call the following methods
+    // defined by the NoticeDialogFragment.NoticeDialogListener interface
+    @Override
+    public void onDialogPositiveClick(DialogFragment dialog) {
+        // User touched the dialog's positive button
+        PickLayersAlert pla = (PickLayersAlert)dialog;
+        System.out.println(pla.getmSelectedItems());
+
+    }
+
+    @Override
+    public void onDialogNegativeClick(DialogFragment dialog) {
+        // User touched the dialog's negative button
+
     }
 }
