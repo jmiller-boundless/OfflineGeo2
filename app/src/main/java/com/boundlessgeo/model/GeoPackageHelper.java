@@ -1,22 +1,23 @@
 package com.boundlessgeo.model;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.jeo.android.geopkg.GeoPackage;
-import org.jeo.android.geopkg.GeoPkgWorkspace;
-
 import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+
+import org.jeo.android.geopkg.GeoPackage;
+import org.jeo.geopkg.GeoPkgWorkspace;
+import org.jeo.util.Password;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class GeoPackageHelper extends SQLiteOpenHelper {
@@ -83,12 +84,18 @@ public class GeoPackageHelper extends SQLiteOpenHelper {
             String myPath = DB_PATH + DB_NAME;
             checkDB = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READWRITE);
             File file = new File(myPath);
-            GeoPkgWorkspace workspace = GeoPackage.open(file);
+            Map opts = new HashMap();
+            opts.put("file",file);
+            opts.put("user","");
+            opts.put("passwd",new Password(new char[]{}));
+            GeoPkgWorkspace workspace = new GeoPackage().open(file,opts);
 
 
         }catch(SQLiteException e){
 
             //database does't exist yet.
+
+        }catch(IOException i){
 
         }
 

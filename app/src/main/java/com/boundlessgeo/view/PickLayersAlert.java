@@ -24,6 +24,11 @@ public class PickLayersAlert extends DialogFragment {
     String type;
     List mSelectedItems;
     NoticeDialogListener mListener;
+    String pathToDB;
+
+    public void setPathToDB(String path){
+        pathToDB=path;
+    }
 
     public List getmSelectedItems() {
         return mSelectedItems;

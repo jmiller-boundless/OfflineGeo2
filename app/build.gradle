@@ -23,7 +23,7 @@ android {
 }
 repositories {
     maven {
-        url "http://repo.opengeo.org"
+        url "http://repo.boundlessgeo.com/main"
     }
 }
 
@@ -33,4 +33,5 @@ dependencies {
     compile 'com.google.android.gms:play-services:4.2.42'
     compile 'com.android.support:appcompat-v7:19.+'
     compile 'org.jeo:jeo-android:0-SNAPSHOT'
+    compile 'org.jeo:format:0-SNAPSHOT'
 }
