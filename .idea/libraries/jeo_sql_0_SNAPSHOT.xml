@@ -1,11 +1,11 @@
 <component name="libraryTable">
   <library name="jeo-sql-0-SNAPSHOT">
     <CLASSES>
-      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jeo/jeo-sql/0-SNAPSHOT/5e53a1a14b798a50807e54d3d25537a6353d31b/jeo-sql-0-SNAPSHOT.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jeo/jeo-sql/0-SNAPSHOT/bd11811195fd2c00f801a0e20ce961611143b35c/jeo-sql-0-SNAPSHOT.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jeo/jeo-sql/0-SNAPSHOT/ce2dd62aad0ec82aaea52076c0443c3288231dbf/jeo-sql-0-SNAPSHOT-sources.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jeo/jeo-sql/0-SNAPSHOT/c96e5541e671811fdc8f4d8693dfbdf5e54307f7/jeo-sql-0-SNAPSHOT-sources.jar!/" />
     </SOURCES>
   </library>
 </component>
