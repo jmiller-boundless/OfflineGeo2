@@ -6,18 +6,23 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Environment;
 
-import org.jeo.android.geopkg.GeoPackage;
-import org.jeo.geopkg.GeoPkgWorkspace;
-import org.jeo.util.Password;
+import com.boundlessgeo.util.ISO8601;
 
+import org.jeo.data.Workspace;
+import org.jeo.geopkg.GeoPackage;
+
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Map;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 
 public class GeoPackageHelper extends SQLiteOpenHelper {
@@ -25,19 +30,20 @@ public class GeoPackageHelper extends SQLiteOpenHelper {
     //The Android's default system path of your application database.
     private static String DB_PATH = "/data/data/boundlessgeo.com.offlinegeo2/databases/";
 
-    private static String DB_NAME = "countries.gpkg";
+    private String db_name;
 
-    private SQLiteDatabase myDataBase;
+   // private SQLiteDatabase myDataBase;
+    private Workspace myDataBase;
 
-    public SQLiteDatabase getMyDataBase() {
+    public Workspace getMyDataBase() {
         return myDataBase;
     }
 
     private final Context myContext;
-    public GeoPackageHelper(Context context) {
-
-        super(context, DB_NAME, null, 1);
+    public GeoPackageHelper(Context context,String dbname) {
+        super(context, dbname, null, 1);
         this.myContext = context;
+        db_name=dbname;
     }
     @Override
     public void onCreate(SQLiteDatabase arg0) {
@@ -71,33 +77,62 @@ public class GeoPackageHelper extends SQLiteOpenHelper {
         }
 
     }
-
-    /**
-     * Check if the database already exist to avoid re-copying the file each time you open the application.
-     * @return true if it exists, false if it doesn't
+    /*
+     * Check if the GPKG has ever been downloaded to the SDCard
      */
-    private boolean checkDataBase(){
+    public boolean checkSDCardDataBase(){
 
         SQLiteDatabase checkDB = null;
 
         try{
-            String myPath = DB_PATH + DB_NAME;
+            String myPath = Environment.getExternalStorageDirectory().getPath()+"/"+db_name;
             checkDB = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READWRITE);
-            File file = new File(myPath);
-            Map opts = new HashMap();
-            opts.put("file",file);
-            opts.put("user","");
-            opts.put("passwd",new Password(new char[]{}));
-            GeoPkgWorkspace workspace = new GeoPackage().open(file,opts);
+
 
 
         }catch(SQLiteException e){
 
             //database does't exist yet.
 
-        }catch(IOException i){
+        }
+
+        if(checkDB != null){
+
+            checkDB.close();
 
         }
+
+        return checkDB != null ? true : false;
+    }
+
+
+    /**
+     * Check if the database already exist to avoid re-copying the file each time you open the application.
+     * @return true if it exists, false if it doesn't
+     */
+    public boolean checkDataBase(){
+
+        SQLiteDatabase checkDB = null;
+
+        try{
+            String myPath = DB_PATH + db_name;
+            checkDB = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READWRITE);
+           // File file = new File(myPath);
+          //  Map opts = new HashMap();
+           // opts.put("file",file);
+          //  opts.put("user","");
+           // opts.put("passwd",new Password(new char[]{}));
+            //GeoPkgWorkspace workspace = new GeoPackage().open(file,opts);
+
+
+        }catch(SQLiteException e){
+
+            //database does't exist yet.
+
+        }
+        //catch(IOException i){
+
+        //}
 
         if(checkDB != null){
 
@@ -113,13 +148,15 @@ public class GeoPackageHelper extends SQLiteOpenHelper {
      * system folder, from where it can be accessed and handled.
      * This is done by transfering bytestream.
      * */
-    private void copyDataBase() throws IOException{
+    public void copyDataBase() throws IOException{
 
         //Open your local db as the input stream
-        InputStream myInput = myContext.getAssets().open(DB_NAME);
+        //InputStream myInput = myContext.getAssets().open(db_name);
+        File file = new File(Environment.getExternalStorageDirectory().getPath()+"/"+db_name);
+        InputStream myInput = new BufferedInputStream(new FileInputStream(file));
 
         // Path to the just created empty db
-        String outFileName = DB_PATH + DB_NAME;
+        String outFileName = DB_PATH + db_name;
 
         //Open the empty db as the output stream
         OutputStream myOutput = new FileOutputStream(outFileName);
@@ -141,9 +178,18 @@ public class GeoPackageHelper extends SQLiteOpenHelper {
     public void openDataBase() throws SQLException{
 
         //Open the database
-        String myPath = DB_PATH + DB_NAME;
-        myDataBase = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READWRITE);
-
+        String myPath = DB_PATH + db_name;
+        //myDataBase = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READWRITE);
+        File file = new File(myPath);
+        //Map opts = new HashMap();
+        //opts.put("file",file);
+       // opts.put("user","");
+        //opts.put("passwd",new Password(new char[]{}));
+        try {
+            myDataBase = GeoPackage.open(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -167,6 +213,37 @@ public class GeoPackageHelper extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery(query, null);
 
         return cursor;
+    }
+    public boolean isLocalLatest(){
+        boolean locallatest = true;
+        long localtime;
+        long externaltime;
+        SimpleDateFormat ISO8601DATEFORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
+        String query = "SELECT last_change from gpkg_contents";
+        //local internal
+        String myPath = DB_PATH + db_name;
+        SQLiteDatabase localinternaldb = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READWRITE);
+        Cursor lidbc = localinternaldb.rawQuery(query,new String[]{});
+        lidbc.moveToFirst();
+        String lidatestring = lidbc.getString(0);
+        //sd card
+        String exPath = Environment.getExternalStorageDirectory().getPath() + "/"+db_name;
+        SQLiteDatabase externaldb = SQLiteDatabase.openDatabase(exPath, null, SQLiteDatabase.OPEN_READWRITE);
+        Cursor exdbc = localinternaldb.rawQuery(query,new String[]{});
+        exdbc.moveToFirst();
+        String exdatestring = exdbc.getString(0);
+        try {
+            localtime =  ISO8601.toCalendar(lidatestring).getTime().getTime();
+            externaltime = ISO8601.toCalendar(exdatestring).getTime().getTime();
+            locallatest = localtime>=externaltime;
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        lidbc.close();
+        exdbc.close();
+        localinternaldb.close();
+        externaldb.close();
+        return locallatest;
     }
 
     @Override
