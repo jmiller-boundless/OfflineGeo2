@@ -1,22 +1,20 @@
 package boundlessgeo.com.offlinegeo2;
 
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
-import android.database.SQLException;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.os.Environment;
+import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
 
 import com.boundlessgeo.model.GeoPackageHelper;
 import com.boundlessgeo.view.PickLayersAlert;
+import com.boundlessgeo.view.SimpleAlertDialogFragment;
+import com.boundlessgeo.view.UpdateDBDialogFragment;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
@@ -35,7 +33,9 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     ProgressDialog pDialog;
     String file_url="http://10.0.3.2:8080/geoserver/opengeo/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=opengeo%3Acountries&maxfeatures=50&outputformat=geopackage";
-
+    private GeoPackageHelper myDbHelper;
+    SimpleAlertDialogFragment sfrag;
+    UpdateDBDialogFragment ufrag;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,18 +55,50 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
         });
 
         dialog.show();*/
-        pDialog = new ProgressDialog(this);
-        pDialog.setMessage("Downloading file. Please wait...");
-        pDialog.setIndeterminate(false);
-        pDialog.setMax(100);
-        pDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        pDialog.setCancelable(true);
-        pDialog.show();
+
+        myDbHelper = new GeoPackageHelper(getApplicationContext(),getApplicationContext().getString(R.string.gpkgname));
+        //Does the database exist on the SDCard?
+        boolean gpkgon = myDbHelper.checkDataBase();
+        //is the device connected to a network?
+        boolean amonline = amonline();
+        //if not on device and online, download it
+        if(!gpkgon&&amonline) {
 
 
-        new DownloadFileFromURL().execute(file_url);
+            pDialog = new ProgressDialog(this);
+            pDialog.setMessage("Downloading file. Please wait...");
+            pDialog.setIndeterminate(false);
+            pDialog.setMax(100);
+            pDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            pDialog.setCancelable(true);
+            pDialog.show();
+            new DownloadFileFromURL().execute(file_url);
+            try {
+                myDbHelper.copyDataBase();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }else if(!gpkgon&&!amonline){//no database and offline
+            sfrag = SimpleAlertDialogFragment.newInstance(R.string.nodboffline);
+            sfrag.show(getSupportFragmentManager(),"Offline");
+        }else if(gpkgon&&amonline){//database and online
+            ufrag = UpdateDBDialogFragment.newInstance(R.string.update);
+            ufrag.show(getSupportFragmentManager(),"Update");
+        }
 
 
+
+
+    }
+
+    private boolean amonline() {
+        ConnectivityManager cm =
+                (ConnectivityManager)getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null &&
+                activeNetwork.isConnectedOrConnecting();
+        return isConnected;
     }
 
     @Override
@@ -110,7 +142,7 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        GeoPackageHelper myDbHelper = new GeoPackageHelper(this);
+/*        GeoPackageHelper myDbHelper = new GeoPackageHelper(this);
 
         try {
 
@@ -130,7 +162,7 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
 
             throw sqle;
 
-        }
+        }*/
         mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
     }
 
@@ -152,6 +184,14 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
 
     }
 
+    public void doPositiveUpdateClick() {
+        boolean islocallatest = myDbHelper.isLocalLatest();
+        ufrag.dismiss();
+    }
+
+    public void doNegativeUpdateClick() {
+        ufrag.dismiss();
+    }
 
 
     /**
@@ -174,6 +214,13 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
          * */
         @Override
         protected String doInBackground(String... f_url) {
+
+            downloadGPKG(f_url);
+            return null;
+        }
+
+
+        protected void downloadGPKG(String... f_url){
             int count;
             try {
                 URL url = new URL(f_url[0]);
@@ -187,7 +234,7 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
                 InputStream input = new BufferedInputStream(url.openStream(), 8192);
 
                 // Output stream
-                OutputStream output = new FileOutputStream("/sdcard/opengeo-countries.gpkg");
+                OutputStream output = new FileOutputStream("/sdcard/"+getApplicationContext().getString(R.string.gpkgname));
 
                 byte data[] = new byte[1024];
 
@@ -214,9 +261,7 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
                 Log.e("Error: ", e.getMessage());
             }
 
-            return null;
         }
-
         /**
          * Updating progress bar
          * */
@@ -235,7 +280,8 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
             pDialog.dismiss();
             FragmentManager fm = getSupportFragmentManager();
             PickLayersAlert pickLayersAlert = new PickLayersAlert();
-            pickLayersAlert.setPathToDB(Environment.getExternalStorageDirectory().toString() + "/opengeo-countries.gpkg");
+            //pickLayersAlert.setPathToDB(Environment.getExternalStorageDirectory().toString() + "/"+R.string.gpkgname);
+            pickLayersAlert.setGhelper(myDbHelper);
             pickLayersAlert.show(fm,"picklayersalert");
             // Displaying downloaded image into image view
             // Reading image path from sdcard
