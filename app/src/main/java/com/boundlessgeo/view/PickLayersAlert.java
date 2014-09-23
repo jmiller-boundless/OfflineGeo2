@@ -3,14 +3,11 @@ package com.boundlessgeo.view;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.ArrayAdapter;
+
+import com.boundlessgeo.model.GeoPackageHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +22,12 @@ public class PickLayersAlert extends DialogFragment {
     List mSelectedItems;
     NoticeDialogListener mListener;
     String pathToDB;
+
+    public void setGhelper(GeoPackageHelper ghelper) {
+        this.ghelper = ghelper;
+    }
+
+    GeoPackageHelper ghelper;
 
     public void setPathToDB(String path){
         pathToDB=path;
@@ -56,6 +59,8 @@ public class PickLayersAlert extends DialogFragment {
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         mSelectedItems = new ArrayList();  // Where we track the selected items
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        //Use GeoPackageHelper to Open the Package and Pull out a list of layers
+
         // Set the dialog title
         builder.setTitle(R.string.pick_toppings)
                 // Specify the list array, the items to be selected by default (null for none),
