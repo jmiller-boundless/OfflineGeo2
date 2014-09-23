@@ -5,9 +5,12 @@
     <string name="title_activity_maps">Map</string>
     <string name="dialog_fire_missiles">FIRE ZE MISSILES!</string>
     <string name="fire">Fire</string>
+    <string name="nodboffline">No database found and you are offline!"</string>
+    <string name="update">Do you want to check for an updated GeoPackage?</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
-    <string name="pick_toppings">Pick Toppings</string>
+    <string name="pick_toppings">Pick Layers</string>
+    <string name="gpkgname">opengeo-countries.gpkg</string>
     <string-array name="toppings">
         <item>Red</item>
         <item>Green</item>
