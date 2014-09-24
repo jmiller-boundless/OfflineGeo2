@@ -22,12 +22,13 @@ public class PickLayersAlert extends DialogFragment {
     List mSelectedItems;
     NoticeDialogListener mListener;
     String pathToDB;
+    GeoPackageHelper ghelper;
 
     public void setGhelper(GeoPackageHelper ghelper) {
         this.ghelper = ghelper;
     }
 
-    GeoPackageHelper ghelper;
+
 
     public void setPathToDB(String path){
         pathToDB=path;
@@ -60,12 +61,12 @@ public class PickLayersAlert extends DialogFragment {
         mSelectedItems = new ArrayList();  // Where we track the selected items
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         //Use GeoPackageHelper to Open the Package and Pull out a list of layers
-
+        String[] layers = ghelper.getLayerList();
         // Set the dialog title
         builder.setTitle(R.string.pick_toppings)
                 // Specify the list array, the items to be selected by default (null for none),
                 // and the listener through which to receive callbacks when items are selected
-                .setMultiChoiceItems(R.array.toppings, null,
+                .setMultiChoiceItems(layers, null,
                         new DialogInterface.OnMultiChoiceClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which,

@@ -6,9 +6,9 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
 import android.util.Log;
 
 import com.boundlessgeo.model.GeoPackageHelper;
@@ -64,30 +64,41 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
         //if not on device and online, download it
         if(!gpkgon&&amonline) {
 
+            launchDownloadGPKGDialog();
 
-            pDialog = new ProgressDialog(this);
-            pDialog.setMessage("Downloading file. Please wait...");
-            pDialog.setIndeterminate(false);
-            pDialog.setMax(100);
-            pDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            pDialog.setCancelable(true);
-            pDialog.show();
-            new DownloadFileFromURL().execute(file_url);
-            try {
-                myDbHelper.copyDataBase();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }else if(!gpkgon&&!amonline){//no database and offline
             sfrag = SimpleAlertDialogFragment.newInstance(R.string.nodboffline);
             sfrag.show(getSupportFragmentManager(),"Offline");
         }else if(gpkgon&&amonline){//database and online
             ufrag = UpdateDBDialogFragment.newInstance(R.string.update);
             ufrag.show(getSupportFragmentManager(),"Update");
+        }else if(gpkgon&&!amonline){
+
+            launchPickLayerDialog();
         }
 
 
 
+
+    }
+
+    private void launchPickLayerDialog() {
+        //layer selector
+        PickLayersAlert pickLayersAlert = new PickLayersAlert();
+        pickLayersAlert.setPathToDB(Environment.getExternalStorageDirectory().toString() + "/"+R.string.gpkgname);
+        pickLayersAlert.setGhelper(myDbHelper);
+        pickLayersAlert.show(getSupportFragmentManager(),"picklayersalert");
+    }
+
+    private void launchDownloadGPKGDialog() {
+        pDialog = new ProgressDialog(this);
+        pDialog.setMessage("Downloading file. Please wait...");
+        pDialog.setIndeterminate(false);
+        pDialog.setMax(100);
+        pDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        pDialog.setCancelable(true);
+        pDialog.show();
+        new DownloadFileFromURL().execute(file_url);
 
     }
 
@@ -185,12 +196,14 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
     }
 
     public void doPositiveUpdateClick() {
-        boolean islocallatest = myDbHelper.isLocalLatest();
+
         ufrag.dismiss();
+        launchDownloadGPKGDialog();
     }
 
     public void doNegativeUpdateClick() {
         ufrag.dismiss();
+        launchPickLayerDialog();
     }
 
 
@@ -234,7 +247,7 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
                 InputStream input = new BufferedInputStream(url.openStream(), 8192);
 
                 // Output stream
-                OutputStream output = new FileOutputStream("/sdcard/"+getApplicationContext().getString(R.string.gpkgname));
+                OutputStream output = new FileOutputStream(Environment.getExternalStorageDirectory().getPath()+"/"+getApplicationContext().getString(R.string.gpkgname));
 
                 byte data[] = new byte[1024];
 
@@ -277,16 +290,14 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
         @Override
         protected void onPostExecute(String file_url) {
             // dismiss the dialog after the file was downloaded
+            try {
+                //create the internal db if necessary, and then copy it over with the downloaded file if it is newer
+                myDbHelper.createDataBase();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             pDialog.dismiss();
-            FragmentManager fm = getSupportFragmentManager();
-            PickLayersAlert pickLayersAlert = new PickLayersAlert();
-            //pickLayersAlert.setPathToDB(Environment.getExternalStorageDirectory().toString() + "/"+R.string.gpkgname);
-            pickLayersAlert.setGhelper(myDbHelper);
-            pickLayersAlert.show(fm,"picklayersalert");
-            // Displaying downloaded image into image view
-            // Reading image path from sdcard
-
-            // setting downloaded into image view
+            launchPickLayerDialog();
 
         }
 

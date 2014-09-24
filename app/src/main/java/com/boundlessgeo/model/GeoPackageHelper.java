@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 
@@ -55,11 +57,9 @@ public class GeoPackageHelper extends SQLiteOpenHelper {
      * */
     public void createDataBase() throws IOException{
 
-        boolean dbExist = checkDataBase();
+       // boolean dbExist = checkDataBase();
 
-        if(dbExist){
-            //do nothing - database already exist
-        }else{
+       if(!checkDataBase()||!isLocalLatest()){
 
             //By calling this method and empty database will be created into the default system path
             //of your application so we are gonna be able to overwrite that database with our database.
@@ -222,27 +222,43 @@ public class GeoPackageHelper extends SQLiteOpenHelper {
         String query = "SELECT last_change from gpkg_contents";
         //local internal
         String myPath = DB_PATH + db_name;
-        SQLiteDatabase localinternaldb = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READWRITE);
-        Cursor lidbc = localinternaldb.rawQuery(query,new String[]{});
-        lidbc.moveToFirst();
-        String lidatestring = lidbc.getString(0);
-        //sd card
-        String exPath = Environment.getExternalStorageDirectory().getPath() + "/"+db_name;
-        SQLiteDatabase externaldb = SQLiteDatabase.openDatabase(exPath, null, SQLiteDatabase.OPEN_READWRITE);
-        Cursor exdbc = localinternaldb.rawQuery(query,new String[]{});
-        exdbc.moveToFirst();
-        String exdatestring = exdbc.getString(0);
         try {
+            SQLiteDatabase localinternaldb = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READWRITE);
+            Cursor lidbc = localinternaldb.rawQuery(query, new String[]{});
+            lidbc.moveToFirst();
+            String lidatestring = lidbc.getString(0);
             localtime =  ISO8601.toCalendar(lidatestring).getTime().getTime();
-            externaltime = ISO8601.toCalendar(exdatestring).getTime().getTime();
-            locallatest = localtime>=externaltime;
+            lidbc.close();
+            localinternaldb.close();
+        }catch(SQLiteException e){
+
+            //database does't exist yet.
+            return false;
+
         } catch (ParseException e) {
             e.printStackTrace();
+            return false;
         }
-        lidbc.close();
-        exdbc.close();
-        localinternaldb.close();
-        externaldb.close();
+        //sd card
+       try {
+           String exPath = Environment.getExternalStorageDirectory().getPath() + "/" + db_name;
+           SQLiteDatabase externaldb = SQLiteDatabase.openDatabase(exPath, null, SQLiteDatabase.OPEN_READWRITE);
+           Cursor exdbc = externaldb.rawQuery(query, new String[]{});
+           exdbc.moveToFirst();
+           String exdatestring = exdbc.getString(0);
+           externaltime = ISO8601.toCalendar(exdatestring).getTime().getTime();
+           exdbc.close();
+           externaldb.close();
+       }catch(SQLiteException e){
+
+           //database download issue
+           return true;
+
+       } catch (ParseException e) {
+           e.printStackTrace();
+           return true;
+       }
+        locallatest = localtime>=externaltime;
         return locallatest;
     }
 
@@ -252,5 +268,20 @@ public class GeoPackageHelper extends SQLiteOpenHelper {
     }
 
 
+    public String[] getLayerList() {
+        String query = "SELECT table_name FROM gpkg_contents";
+
+        List layers = new ArrayList<String>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(query, null);
+        cursor.moveToFirst();
+        while (!cursor.isAfterLast()) {
+            layers.add(cursor.getString(0));
+            cursor.moveToNext();
+        }
+        // make sure to close the cursor
+        cursor.close();
+        return (String[]) layers.toArray(new String[layers.size()]);
+    }
 }
 
