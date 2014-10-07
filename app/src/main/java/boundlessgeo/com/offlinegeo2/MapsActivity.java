@@ -20,6 +20,9 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.jeo.data.Dataset;
+import org.jeo.geopkg.GeoPkgWorkspace;
+
 import java.io.BufferedInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -186,6 +189,16 @@ public class MapsActivity extends FragmentActivity implements PickLayersAlert.No
         // User touched the dialog's positive button
         PickLayersAlert pla = (PickLayersAlert)dialog;
         System.out.println(pla.getmSelectedItems());
+        //open geopackage
+        myDbHelper.openDataBase();
+        GeoPkgWorkspace wspace =  myDbHelper.getMyDataBase();
+        try {
+            //jm placeholder
+            Dataset firstdataset = wspace.get(pla.getLayers()[(Integer) pla.getmSelectedItems().get(0)]);
+            System.out.println(firstdataset.getName());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 

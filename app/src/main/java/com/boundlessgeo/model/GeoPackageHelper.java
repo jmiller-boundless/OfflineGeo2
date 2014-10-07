@@ -10,8 +10,9 @@ import android.os.Environment;
 
 import com.boundlessgeo.util.ISO8601;
 
-import org.jeo.data.Workspace;
-import org.jeo.geopkg.GeoPackage;
+import org.jeo.geopkg.GeoPkgWorkspace;
+import org.jeo.android.geopkg.GeoPackage;
+import org.jeo.util.Password;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -23,8 +24,10 @@ import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 
 public class GeoPackageHelper extends SQLiteOpenHelper {
@@ -35,9 +38,9 @@ public class GeoPackageHelper extends SQLiteOpenHelper {
     private String db_name;
 
    // private SQLiteDatabase myDataBase;
-    private Workspace myDataBase;
+    private GeoPkgWorkspace myDataBase;
 
-    public Workspace getMyDataBase() {
+    public GeoPkgWorkspace getMyDataBase() {
         return myDataBase;
     }
 
@@ -181,12 +184,12 @@ public class GeoPackageHelper extends SQLiteOpenHelper {
         String myPath = DB_PATH + db_name;
         //myDataBase = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READWRITE);
         File file = new File(myPath);
-        //Map opts = new HashMap();
-        //opts.put("file",file);
-       // opts.put("user","");
-        //opts.put("passwd",new Password(new char[]{}));
+        Map opts = new HashMap();
+        opts.put("file",file);
+        opts.put("passwd",new Password(new char[]{}));
         try {
-            myDataBase = GeoPackage.open(file);
+            GeoPkgWorkspace workspace = new GeoPackage().open(file,opts);
+            myDataBase = workspace;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -195,8 +198,9 @@ public class GeoPackageHelper extends SQLiteOpenHelper {
     @Override
     public synchronized void close() {
 
-        if(myDataBase != null)
+        if(myDataBase != null) {
             myDataBase.close();
+        }
 
         super.close();
 

@@ -20,6 +20,7 @@ import boundlessgeo.com.offlinegeo2.R;
 public class PickLayersAlert extends DialogFragment {
     String type;
     List mSelectedItems;
+    String[] layers;
     NoticeDialogListener mListener;
     String pathToDB;
     GeoPackageHelper ghelper;
@@ -37,7 +38,9 @@ public class PickLayersAlert extends DialogFragment {
     public List getmSelectedItems() {
         return mSelectedItems;
     }
-
+    public String[]getLayers(){
+        return layers;
+    }
     public interface NoticeDialogListener {
         public void onDialogPositiveClick(DialogFragment dialog);
         public void onDialogNegativeClick(DialogFragment dialog);
@@ -61,7 +64,7 @@ public class PickLayersAlert extends DialogFragment {
         mSelectedItems = new ArrayList();  // Where we track the selected items
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         //Use GeoPackageHelper to Open the Package and Pull out a list of layers
-        String[] layers = ghelper.getLayerList();
+        layers = ghelper.getLayerList();
         // Set the dialog title
         builder.setTitle(R.string.pick_toppings)
                 // Specify the list array, the items to be selected by default (null for none),
